@@ -1,0 +1,16 @@
+name: SMETest
+settings:
+  GENERATE_INFOPLIST_FILE: YES
+  CODE_SIGN_STYLE: Automatic
+  SWIFT_OBJC_BRIDGING_HEADER: src/Bridging-Header.h
+  OTHER_CFLAGS: -march=armv9.2-a+sme2p1+sme-f64f64+sme-i16i64+sme-f16f16 -pthread
+  CLANG_CXX_LANGUAGE_STANDARD: c++23
+  GCC_C_LANGUAGE_STANDARD: c2x
+options:
+  bundleIdPrefix: com.tzakharko
+targets:
+  SMETest:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources: [src]
