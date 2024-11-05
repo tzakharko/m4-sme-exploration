@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# obtain the developer team id
+if [ -z "$XCODE_DEVELOPMENT_TEAM" ]; then
+  echo "Enter your Development Team ID (you can find it on your Apple Developer page)"
+  echo "This will be used to sign the executable to run on your M4 iPad"
+  read -p "> " DEVELOPMENT_TEAM
+fi
+
+
+# obtain the list of paired iPad devices
+DEVICES=$(
+  xcrun devicectl list devices                         \
+   --filter "hardwareProperties.deviceType == 'iPad'"  \
+    --columns "Name"                                   \
+    --hide-default-columns                             \
+    --hide-headers                                     \
+  | tail -n +2
+)
+
+if [ -z "$DEVICES" ]; then
+  >&2 echo "Error: No iPad paired with this machine. Connect an M4 or later iPad and enable the developer mode."
+  exit 1
+fi
+
+# Prompt the user to select an option
+IFS=$'\n'
+DEVICES=($DEVICES)
+
+echo "Select a paired device to run the tests on"
+select DEVICE in "${DEVICES[@]}"; do break; done
+
+echo -e "\033[0;32mUpdating configuration in make.config\033[0m"
+echo "DEVICE=$DEVICE"
+echo "DEVICE=$DEVICE" > make.config
+if [ -n "$DEVELOPMENT_TEAM" ]; then
+  echo "XCODE_DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM"
+  echo "XCODE_DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM" >> make.config
+fi

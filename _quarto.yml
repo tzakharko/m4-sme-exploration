@@ -1,0 +1,5 @@
+format:
+  gfm:
+    knitr:
+      opts_chunk:
+        fig.path: "figures/"

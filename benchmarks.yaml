@@ -1,0 +1,591 @@
+# Instruction microbenchmarks
+#
+# Fields:
+#
+#   label: a short descriptive label
+#   category: instruction category
+#   opcode: instruction opcode
+#   feature: enabling ARM feature
+#   predicated: true if the instruction is predicated
+#   vgsize: vector group size (number of registers per input operand)
+#   output:
+#     type: type of accumulator (za-tile, za-vector, za-double-vector, za-quad-vector, z-vector)
+#     data: accumulator data type
+#   input:
+#     data: input data type
+#   ops: number of operations for each element (data lane) in the output
+
+# OUTER PRODUCTS
+- label: FMOPA (FP16)
+  category: Outer Product (floating-point)
+  opcode: fmopa
+  feature: FEAT_SME_F16F16
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: f16
+  input:
+    data: f16
+  ops: 2 # a = a + x*y
+
+- label: FMOPA (FP32)
+  category: Outer Product (floating-point)
+  opcode: fmopa
+  feature: SME_F32F32
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: f32
+  input:
+    data: f32
+  ops: 2 # a = a + x*y
+
+- label: FMOPA (FP64)
+  category: Outer Product (floating-point)
+  opcode: fmopa
+  feature: FEAT_SME_F64F64
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: f64
+  input:
+    data: f64
+  ops: 2 # a = a + x*y
+
+- label: FMOPA (FP16 into FP32, 2-way)
+  category: Outer Product (floating-point)
+  opcode: fmopa
+  feature: SME_F16F32
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: f32
+  input:
+    data: f16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: BFMOPA (BF16 into FP32, 2-way)
+  category: Outer Product (floating-point)
+  opcode: bfmopa
+  feature: SME_B16F32
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: f32
+  input:
+    data: b16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SMOPA (I16 into I32, 2-way)
+  category: Outer Product (integer)
+  opcode: smopa
+  feature: SME_I16I32
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: i32
+  input:
+    data: i16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SMOPA (I8 into I32, 4-way)
+  category: Outer Product (integer)
+  opcode: smopa
+  feature: SME_I8I32
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: i32
+  input:
+    data: i8
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SMOPA (I16 into I64, 4-way)
+  category: Outer Product (integer)
+  opcode: smopa
+  feature: FEAT_SME_I16I64
+  predicated: true
+  vgsize: 1
+  output:
+    type: za-tile
+    data: i64
+  input:
+    data: i16
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+# Mulltiply-Accumulate
+- label: FMLA (FP16, one vector)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: f16
+  input:
+    data: f16
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP32, one vector)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: f32
+  input:
+    data: f32
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP64, one vector)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: f64
+  input:
+    data: f64
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP32, two vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: f32
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP32, four vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: f32
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP64, two vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: f64
+  input:
+    data: f64
+  ops: 2 # a = a + x*y
+
+- label: FMLA (FP64, four vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmla
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: f64
+  input:
+    data: f64
+  ops: 2 # a = a + x*y
+
+- label: FMLAL (FP16 to FP32, two vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-double-vector
+    data: f32
+  input:
+    data: f16
+  ops: 2 # a = a + x*y
+
+- label: FMLAL (FP16 to FP32, four vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: fmlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-double-vector
+    data: f32
+  input:
+    data: f16
+  ops: 2 # a = a + x*y
+
+- label: BFMLAL (BF16 to FP32, two vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: bfmlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-double-vector
+    data: f32
+  input:
+    data: b16
+  ops: 2 # a = a + x*y
+
+- label: BFMLAL (BF16 to FP32, four vectors)
+  category: Multiply-Accumulate (floating-point)
+  opcode: bfmlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-double-vector
+    data: f32
+  input:
+    data: b16
+  ops: 2 # a = a + x*y
+
+- label: MLA (I8, one vector)
+  category: Multiply-Accumulate (integer)
+  opcode: mla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: i8
+  input:
+    data: i8
+  ops: 2 # a = a + x*y
+
+- label: MLA (I16, one vector)
+  category: Multiply-Accumulate (integer)
+  opcode: mla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: i16
+  input:
+    data: i16
+  ops: 2 # a = a + x*y
+
+- label: MLA (I32, one vector)
+  category: Multiply-Accumulate (integer)
+  opcode: mla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: i32
+  input:
+    data: i32
+  ops: 2 # a = a + x*y
+
+- label: MLA (I64, one vector)
+  category: Multiply-Accumulate (integer)
+  opcode: mla
+  feature: FEAT_SME
+  predicated: true
+  vgsize: 1
+  output:
+    type: z-register
+    data: i64
+  input:
+    data: i64
+  ops: 2 # a = a + x*y
+
+- label: SMLAL (I16 to I32, two vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-double-vector
+    data: i32
+  input:
+    data: i16
+  ops: 2 # a = a + x*y
+
+- label: SMLAL (I16 to I32, four vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlal
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-double-vector
+    data: i32
+  input:
+    data: i16
+  ops: 2 # a = a + x*y
+
+- label: SMLALL (I8 to I32, two vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlall
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-quad-vector
+    data: i32
+  input:
+    data: i8
+  ops: 2 # a = a + x*y
+
+- label: SMLALL (I8 to I32, four vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlall
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-quad-vector
+    data: i32
+  input:
+    data: i8
+  ops: 2 # a = a + x*y
+
+- label: SMLALL (I16 to I64, two vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlall
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-quad-vector
+    data: i64
+  input:
+    data: i16
+  ops: 2 # a = a + x*y
+
+- label: SMLALL (I16 to I64, four vectors)
+  category: Multiply-Accumulate (integer)
+  opcode: smlall
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-quad-vector
+    data: i64
+  input:
+    data: i16
+  ops: 2 # a = a + x*y
+
+# Dot Product
+- label: FDOT (FP16 to FP32, 2-way, one vector)
+  category: Dot Product (floating-point)
+  opcode: fdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 1
+  output:
+    type: z-register
+    data: f32
+  input:
+    data: f16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: BFDOT (BF16 to FP32, 2-way, one vector)
+  category: Dot Product (floating-point)
+  opcode: bfdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 1
+  output:
+    type: z-register
+    data: f32
+  input:
+    data: b16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: FDOT (FP16 to FP32, 2-way, two vectors)
+  category: Dot Product (floating-point)
+  opcode: fdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: f16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: FDOT (FP16 to FP32, 2-way, four vectors)
+  category: Dot Product (floating-point)
+  opcode: fdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: f16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: BFDOT (BF16 to FP32, 2-way, two vectors)
+  category: Dot Product (floating-point)
+  opcode: bfdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: b16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: BFDOT (BF16 to FP32, 2-way, two vectors)
+  category: Dot Product (floating-point)
+  opcode: bfdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: f32
+  input:
+    data: b16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SDOT (I16 to I32, 2-way, one vector)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 1
+  output:
+    type: z-register
+    data: i32
+  input:
+    data: i16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SDOT (I8 to I32, 4-way, one vector)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 1
+  output:
+    type: z-register
+    data: i32
+  input:
+    data: i8
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SDOT (I16 to I64, 4-way, one vector)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 1
+  output:
+    type: z-register
+    data: i64
+  input:
+    data: i16
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SDOT (I16 to I32, 2-way, two vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: i32
+  input:
+    data: i16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SDOT (I16 to I32, 2-way, four vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: i32
+  input:
+    data: i16
+  ops: 4 # a = a + x.0*y.0 + x.1*y.1
+
+- label: SDOT (I8 to I32, 4-way, two vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: i32
+  input:
+    data: i8
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SDOT (I8 to I32, 4-way, four vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: i32
+  input:
+    data: i8
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SDOT (I16 to I64, 4-way, two vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 2
+  output:
+    type: za-vector
+    data: i64
+  input:
+    data: i16
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3
+
+- label: SDOT (I16 to I64, 4-way, four vectors)
+  category: Dot Product (integer)
+  opcode: sdot
+  feature: FEAT_SME2
+  predicated: false
+  vgsize: 4
+  output:
+    type: za-vector
+    data: i64
+  input:
+    data: i16
+  ops: 8 # a = a + x.0*y.0 + x.1*y.1 + x.2*y.2 + x.3*y.3

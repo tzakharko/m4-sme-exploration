@@ -1,0 +1,16 @@
+{
+  "cpu_p_cores" : 3,
+  "cpu_e_cores" : 6,
+  "sme_features" : [
+    "FEAT_SME",
+    "FEAT_SME2",
+    "SME_F32F32",
+    "SME_BI32I32",
+    "SME_B16F32",
+    "SME_F16F32",
+    "SME_I8I32",
+    "SME_I16I32",
+    "FEAT_SME_F64F64",
+    "FEAT_SME_I16I64"
+  ]
+}
