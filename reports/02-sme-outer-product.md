@@ -202,36 +202,20 @@ difference between running one core with two accumulators or two cores
 with a single accumulator. The E-cores, on the other hand, show no
 scaling at all, which is in line with the previous results.
 
-My interpretation of these results is that multicore processing is not
-an excuse to write algorithms with low instruction-level parallelism.
-Using multiple threads might compensate for such code somewhat, but the
-results are system-dependent and should not be relied upon.
-Simultaneously, there is a clear performance advantage to using
-multithreading with optimally written code. Although limited, the
-E-cores can boost the performance by 11%, and the system will be able to
-balance the resourses better.
-
-Still, some questions remain. SME, being a shared resource potentially
-adds a layer of complexity to HPC algorithm design. It is not clear to
-me how to determine the optimal multithreading strategy in this case.
-Maximizing per-core performance and launching multiple threads for
-scalability and compatibility with future hardware seems like a good
-idea. However, this is only feasible if the problem size is large. L2
-cache is finite and multiple threads contesting the resources might lead
-to cache trashing. Finally, it is hardly energy-efficient to spawn
-dozens of threads if just a few will reach the same performance. These
-problems could be addressed by monitoring performance and adjusting the
-thread load accordingly. However, Apple platforms currently lack
-convenient low-level mechanisms to make this feasible. For example, the
-upcoming M4 Macs will feature multiple CPU clusters, each with its own
-SME unit. A programmer might want to launch two threads that run code on
-these units. Apple provides APIs for collocating threads on the same CPU
-cluster, but in my experiments I was not able to leverage this API to
-launch threads on different clusters. Still, with SME being such a new
-technology, challenges are expected, and I am confident they will be
-addressed in the future. It is also possible that upcoming Apple Silicon
-models will feature more powerful SME units that require multiple
-threads to utilize fully.
+SME, as a shared resource, adds an additional layer of complexity to
+writing HPC algorithms. While the ability to saturate the SME unit from
+a single thread offers flexibility, multithreading remains essential for
+balancing workloads and maximizing performance. However, selecting an
+optimal threading strategy is challenging. SME is a per-cluster
+resource, and to the best of my knowledge, Apple’s APIs currently lack
+tools for scheduling threads across different clusters. Launching the
+maximum number of threads is possible, but it depends on very large
+problem sizes (especially on upcoming many-core Macs), is inefficient,
+and risks L2 cache thrashing. Additionally, as shown in the next
+section, mixing SME instructions that target different data formats
+incurs a performance penalty. Special care must be taken to avoid
+running parallel threads that process different types of data, as this
+can lead to a significant performance regression.
 
 ### Instruction latency and SME hardware implementation details
 
@@ -284,6 +268,13 @@ following conclusions:
 - 16-bit floating point MOPA is likely executed as 2x 32-bit MOPA
 - There is one cycle penalty for switching between some data paths
 
+Pitfalls of instruction mixing are particularly relevant for
+multithreaded processing. Since SME instructions from multiple threads
+are executed on a shared SME unit, threads processing different data
+types might experience a significant performance regression. Care should
+be taken not to mix different SME code in threads that execute in
+parallel.
+
 **16-bit floating point MOPA is likely executed as 2x 32-bit MOPA**
 
 It seems odd that 16-bit FP MOPA has a latency of 8 cycles where all
@@ -326,6 +317,23 @@ cycle count below eight.
 
 Testing sequences between 2 and 4 FP32 and FP64 FMOPAs yields the
 following:
+
+``` asm
+# 4 cycles
+fmopa z0.s, p0/m, p0/m, z1.s, z2.s # A (FP32)
+fmopa z1.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+
+# 5 cycles
+fmopa z0.s, p0/m, p0/m, z1.s, z2.s # A (FP32)
+fmopa z1.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+fmopa z2.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+
+# 6 cycles
+fmopa z0.s, p0/m, p0/m, z1.s, z2.s # A (FP32)
+fmopa z1.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+fmopa z2.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+fmopa z3.d, p0/m, p0/m, z1.d, z2.d # B (FP64) 
+```
 
 This result is stable, no matter how one mixes the instructions. A
 reasonable explanation is that switching between data types requires one
