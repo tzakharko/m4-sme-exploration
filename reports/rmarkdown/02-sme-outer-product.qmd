@@ -86,13 +86,13 @@ An SME outer product instruction multiplies a column vector by a row vector and 
 
 
 ```
-  opcode     ow/colum masks      type suffix 
+  opcode    row/column masks     type suffix 
      |            _____              |
      |           |     |             |
    fmopa za0.s, p0/m, p1/m, z0.s, z1.s
           |                  |     | 
           |                  -------
-  ZA accumulator tile     input resisters 
+  ZA accumulator tile     input registers 
 ```
 
 ARM assembly uses type suffixes to indicate the data type and operation, where b represents 8-bit data, h 16-bit, s 32-bit, and d 64-bit. When data size alone is insufficient to specify the operation, different instruction names are used (e.g., fmopa for floating-point outer products, smopa for signed integer, bfmopa for Brain-float, etc.). Different data types occupy different amounts of ZA storage; for example, a FP64 matrix is half the size of an FP32 matrix. SME partitions ZA storage into typed tiles to represent this in a scalable fashion[^2]. There are four 32-bit tiles (za0.s-za3.s), eight 64-bit tiles (za0.d-za7.d), and so on.
@@ -184,7 +184,7 @@ ggplot(xx, aes(x = as.factor(ilp), y = gops, color = core)) +
 
 On P-cores, most instructions reach maximum performance with four accumulators. Integer SMOPA accumulating into I32 tiles require only two accumulators to achieve peak performance. There was no benefit in using more than four accumulators with 64-bit data types on Apple M4. These results highlight the importance of careful algorithm design when targeting SME-capable processors. A naive algorithm might use a single accumulator tile for matrix multiplication, severely limiting performance (see matrix multiplication example in SME Programmer's Guide for a more advanced approach[^3]). 
 
-It is also clear that the hardware can to execute instructions concurrently. There are different ways to achieve such execution, for example by leveraging multiple hardware execution units. However, in the case of Apple's SME implementation, the evidence points to [pipelined execution](https://en.wikipedia.org/wiki/Instruction_pipelining). Each operation takes multiple steps to execute, and multiple operations can progress through steps back-to-back, like on a factory conveyor belt. On Apple Silicon, most outer product operations take four cycles (steps), but a new operaton can be issued every cycle. This is why the performance grows linearly with the number of accumulators and peaks at four — this corresponds to 25%, 50%, 75%, and 100% of pipeline utilization, respectively. Latency and some scheduling properties of outer product instructions are discussed in a subsequent section. 
+It is also clear that the hardware can to execute instructions concurrently. There are different ways to achieve such execution, for example by leveraging multiple hardware execution units. However, in the case of Apple's SME implementation, the evidence points to [pipelined execution](https://en.wikipedia.org/wiki/Instruction_pipelining). Each operation takes multiple steps to execute, and multiple operations can progress through steps back-to-back, like on a factory conveyor belt. On Apple Silicon, most outer product operations take four cycles (steps), but a new operation can be issued every cycle. This is why the performance grows linearly with the number of accumulators and peaks at four — this corresponds to 25%, 50%, 75%, and 100% of pipeline utilization, respectively. Latency and some scheduling properties of outer product instructions are discussed in a subsequent section. 
 
 Efficiency cores also have an SME unit, but it appears much simpler. While the performance ratio of various operations remains the same, the overall performance is much lower than that of P-cores. We also do not see any evidence of concurrent operation execution. It is unclear whether the unit merely lacks pipelined execution or whether its design precludes concurrency entirely. One could speculate that for reasons of transistor economy the SME unit in the E-core might be much smaller and execute operations using multiple passes internally. 
 
@@ -235,7 +235,7 @@ SME, as a shared resource, adds an additional layer of complexity to writing HPC
 
 This section is speculative, as I am thinking out loud about what some of these results can reveal about the inner workings of the SME unit. I welcome any discussion and suggestions.
 
-We already saw evidence that the P-core SME unit is pipelined. At 2 TFLOPs of FP32 and 512 FLOP per outer product this translates to the clock frequency of 2e12/512/sec ≈ 3.9Ghz. This is very close to the operating frequency of the M4 CPU running multithreaded core, which is unlikely to be a coincidence. It makes sence that the SME unit would operate at the same frequency as the rest of the cluster. Knowing the frequency, we can now measure the latency of the outer product operations. For this, we measure the time required to execute data-dependent instructions like these:
+We already saw evidence that the P-core SME unit is pipelined. At 2 TFLOPs of FP32 and 512 FLOP per outer product this translates to the clock frequency of 2e12/512/sec ≈ 3.9Ghz. This is very close to the operating frequency of the M4 CPU running multithreaded core, which is unlikely to be a coincidence. It makes sense that the SME unit would operate at the same frequency as the rest of the cluster. Knowing the frequency, we can now measure the latency of the outer product operations. For this, we measure the time required to execute data-dependent instructions like these:
 
 ```asm
 fmopa z0.s, p0/m, p0/m, z1.s, z2.s
@@ -283,7 +283,7 @@ instr | A B.0 - - - B1 - - | A B0
     loop 1               loop 2
 ```
 
-If instruction B issues as two dependent instructions, B0 and B1, the distance between them must be at least three cycles (the full pipeline runs in four cycles). This means the execution has to stall for three cycles after B0 (to wait for the result before executing B1). However, the execution mustalso stall after B1 since we go into the next loop, where B0 is the second instruction. Here we only need to stall for two cycles, since A can be issued on the third one. This schema results in 2 instructions in 8 cycles. 
+If instruction B issues as two dependent instructions, B0 and B1, the distance between them must be at least three cycles (the full pipeline runs in four cycles). This means the execution has to stall for three cycles after B0 (to wait for the result before executing B1). However, the execution must also stall after B1 since we go into the next loop, where B0 is the second instruction. Here we only need to stall for two cycles, since A can be issued on the third one. This schema results in 2 instructions in 8 cycles. 
 
 And it is not difficult to see that this holds for any combination of up to four instructions. Adding one or two new 16-bit or 32-bit FMOPAs into the mix will fill up some empty slots but will never reduce the loop cycle count below eight. 
 

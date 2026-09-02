@@ -9,13 +9,13 @@ An SME outer product instruction multiplies a column vector by a row
 vector and accumulates the resulting matrix to ZA storage[^1]. Several
 variations of the outer product instructions follow a similar format:
 
-      opcode     ow/colum masks      type suffix 
+      opcode    row/column masks     type suffix 
          |            _____              |
          |           |     |             |
        fmopa za0.s, p0/m, p1/m, z0.s, z1.s
               |                  |     | 
               |                  -------
-      ZA accumulator tile     input resisters 
+      ZA accumulator tile     input registers 
 
 ARM assembly uses type suffixes to indicate the data type and operation,
 where b represents 8-bit data, h 16-bit, s 32-bit, and d 64-bit. When
@@ -161,7 +161,7 @@ execution](https://en.wikipedia.org/wiki/Instruction_pipelining). Each
 operation takes multiple steps to execute, and multiple operations can
 progress through steps back-to-back, like on a factory conveyor belt. On
 Apple Silicon, most outer product operations take four cycles (steps),
-but a new operaton can be issued every cycle. This is why the
+but a new operation can be issued every cycle. This is why the
 performance grows linearly with the number of accumulators and peaks at
 four — this corresponds to 25%, 50%, 75%, and 100% of pipeline
 utilization, respectively. Latency and some scheduling properties of
@@ -227,7 +227,7 @@ We already saw evidence that the P-core SME unit is pipelined. At 2
 TFLOPs of FP32 and 512 FLOP per outer product this translates to the
 clock frequency of 2e12/512/sec ≈ 3.9Ghz. This is very close to the
 operating frequency of the M4 CPU running multithreaded core, which is
-unlikely to be a coincidence. It makes sence that the SME unit would
+unlikely to be a coincidence. It makes sense that the SME unit would
 operate at the same frequency as the rest of the cluster. Knowing the
 frequency, we can now measure the latency of the outer product
 operations. For this, we measure the time required to execute
@@ -303,7 +303,7 @@ If instruction B issues as two dependent instructions, B0 and B1, the
 distance between them must be at least three cycles (the full pipeline
 runs in four cycles). This means the execution has to stall for three
 cycles after B0 (to wait for the result before executing B1). However,
-the execution mustalso stall after B1 since we go into the next loop,
+the execution must also stall after B1 since we go into the next loop,
 where B0 is the second instruction. Here we only need to stall for two
 cycles, since A can be issued on the third one. This schema results in 2
 instructions in 8 cycles.
